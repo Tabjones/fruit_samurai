@@ -41,6 +41,7 @@ namespace fruit_samurai
         //TODO services, subscribers
         //TODO rosparams
         nh_->subscribe(nh_->resolveName(topic_), 1, &FruitSamurai::cbCloud, this);
+        nh_->advertiseService("slice", &FruitSamurai::cbSlice, this);
     }
 
     void FruitSamurai::spinOnce() const
@@ -56,5 +57,14 @@ namespace fruit_samurai
         //TODO this does not use the disabled features
         cloud_ = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
         pcl::fromROSMsg (*msg, *cloud_);
+    }
+
+    bool FruitSamurai::cbSlice(fruit_samurai::Slice::Request &req, fruit_samurai::Slice::Response &res)
+    {
+        if (disabled_){
+            ROS_ERROR("[FruitSamurai::%s]\tNode is disabled, this service is suspended!", __func__);
+            return false;
+        }
+        //TODO
     }
 }

@@ -23,6 +23,8 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_conversions
   roscpp
   tf
+  pcl_ros
+  sensor_msgs
 )
 
 find_package(PCL 1.7.2 COMPONENTS common segmentation sample_consensus search REQUIRED)
@@ -61,17 +63,16 @@ link_directories(${PCL_LIBRARY_DIRS})
 # )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+  FILES
+  Slice.srv
+)
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   geometry_msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  geometry_msgs
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -83,9 +84,9 @@ link_directories(${PCL_LIBRARY_DIRS})
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES fruit_samurai
-#  CATKIN_DEPENDS geometry_msgs pcl_conversion roscpp tf
+  INCLUDE_DIRS include
+  LIBRARIES fruit_samurai
+  CATKIN_DEPENDS geometry_msgs pcl_conversions roscpp tf pcl_ros sensor_msgs
 #  DEPENDS system_lib
 )
 
@@ -109,7 +110,7 @@ add_library(fruit_samurai
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(fruit_samurai ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(fruit_samurai ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 add_executable(fruit_samurai_node

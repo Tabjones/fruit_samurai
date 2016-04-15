@@ -45,6 +45,7 @@
 #include <geometry_msgs/PoseArray.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <ros/rate.h>
+#include <fruit_samurai/Slice.h>
 
 namespace fruit_samurai
 {
@@ -75,8 +76,11 @@ namespace fruit_samurai
         private:
         ///Callback to get input point cloud
         void cbCloud(const sensor_msgs::PointCloud2::ConstPtr &msg);
+        ///Slice service callback perform fruit slicing, aka segmentation in the box
+        bool cbSlice(fruit_samurai::Slice::Request &req, fruit_samurai::Slice::Response &res);
         boost::shared_ptr<ros::NodeHandle> nh_;
         ros::Subscriber sub_;
+        ros::ServiceServer srv_slice_;
         tf::TransformBroadcaster fruit_brcaster_;
 
         bool disabled_;
