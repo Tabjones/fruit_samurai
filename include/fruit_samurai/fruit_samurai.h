@@ -34,16 +34,54 @@
 #define _INCL_FRUIT_SAMURAI_H_
 
 #include <pcl/segmentation/extract_clusters.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/common/common.h>
+#include <pcl_ros/point_cloud.h>
+#include <sensor_msgs/point_cloud_conversion.h>
 #include <ros/console.h>
 #include <ros/common.h>
 #include <tf/transform_broadcaster.h>
 #include <geometry_msgs/PoseArray.h>
+#include <sensor_msgs/PointCloud2.h>
 #include <ros/rate.h>
 
 namespace fruit_samurai
 {
     class FruitSamurai
     {
+        public:
+        FruitSamurai()=delete;
+        FruitSamurai(const std::string name_space);
+
+        ///Get NodeHandle
+        inline ros::NodeHandle getNodeHandle() const
+        {
+            return *nh_;
+        }
+        ///Disable all functionality
+        inline void setDisabled(bool dis)
+        {
+            disabled_ = dis;
+        }
+        ///Check disabled
+        inline bool isDisabled() const
+        {
+            return disabled_;
+        }
+        ///Main spin method
+        void spinOnce() const;
+
+        private:
+        ///Callback to get input point cloud
+        void cbCloud(const sensor_msgs::PointCloud2::ConstPtr &msg);
+        boost::shared_ptr<ros::NodeHandle> nh_;
+        ros::Subscriber sub_;
+        tf::TransformBroadcaster fruit_brcaster_;
+
+        bool disabled_;
+        std::string topic_;
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_;
     };
 }
 #endif //_INCL_FRUIT_SAMURAI_H_

@@ -34,4 +34,27 @@
 
 namespace fruit_samurai
 {
+    FruitSamurai::FruitSamurai(const std::string name_space):
+        disabled_(false), topic_("/pacman_vision/processed_scene")
+    {
+        nh_ = boost::make_shared<ros::NodeHandle>(name_space);
+        //TODO services, subscribers
+        //TODO rosparams
+        nh_->subscribe(nh_->resolveName(topic_), 1, &FruitSamurai::cbCloud, this);
+    }
+
+    void FruitSamurai::spinOnce() const
+    {
+        ros::spinOnce();
+        if (disabled_)
+            return;
+        //TODO add tf broadcaster
+    }
+
+    void FruitSamurai::cbCloud(const sensor_msgs::PointCloud2::ConstPtr &msg)
+    {
+        //TODO this does not use the disabled features
+        cloud_ = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
+        pcl::fromROSMsg (*msg, *cloud_);
+    }
 }
