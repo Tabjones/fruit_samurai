@@ -20,7 +20,7 @@ ENDIF()
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
-  pcl_conversion
+  pcl_conversions
   roscpp
   tf
 )
@@ -102,9 +102,9 @@ include_directories(
 )
 
 ## Declare a C++ library
-# add_library(fruit_samurai
-#   src/${PROJECT_NAME}/fruit_samurai.cpp
-# )
+add_library(fruit_samurai
+  src/fruit_samurai.cpp
+)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -112,17 +112,22 @@ include_directories(
 # add_dependencies(fruit_samurai ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-# add_executable(fruit_samurai_node src/fruit_samurai_node.cpp)
+add_executable(fruit_samurai_node
+    src/main.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(fruit_samurai_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(fruit_samurai_node
-#   ${catkin_LIBRARIES} ${PCL_COMMON_LIBRARIES} ${PCL_SAMPLE_CONSENSUS_LIBRARIES}
-#   ${PCL_SEARCH_LIBRARIES} ${PCL_SEGMENTATION_LIBRARIES}
-# )
+target_link_libraries(fruit_samurai
+  ${catkin_LIBRARIES} ${PCL_COMMON_LIBRARIES} ${PCL_SAMPLE_CONSENSUS_LIBRARIES}
+  ${PCL_SEARCH_LIBRARIES} ${PCL_SEGMENTATION_LIBRARIES}
+)
+
+target_link_libraries(fruit_samurai_node
+    fruit_samurai
+)
 
 #############
 ## Install ##
