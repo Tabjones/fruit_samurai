@@ -34,6 +34,7 @@
 #define _INCL_FRUIT_SAMURAI_H_
 
 #include <pcl/segmentation/extract_clusters.h>
+#include <pcl/segmentation/conditional_euclidean_clustering.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/common/common.h>
@@ -44,6 +45,7 @@
 #include <ros/console.h>
 #include <ros/common.h>
 #include <tf/transform_broadcaster.h>
+#include <tf/transform_listener.h>
 #include <geometry_msgs/PoseArray.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <ros/rate.h>
@@ -62,18 +64,8 @@ namespace fruit_samurai
         {
             return *nh_;
         }
-        ///Disable all functionality
-        inline void setDisabled(bool dis)
-        {
-            disabled_ = dis;
-        }
-        ///Check disabled
-        inline bool isDisabled() const
-        {
-            return disabled_;
-        }
         ///Main spin method
-        void spinOnce() const;
+        void spinOnce();
 
         private:
         ///Callback to get input point cloud
@@ -84,11 +76,15 @@ namespace fruit_samurai
         ros::Subscriber sub_;
         ros::ServiceServer srv_slice_;
         tf::TransformBroadcaster fruit_brcaster_;
+        tf::TransformListener listener_;
 
-        bool disabled_;
-        std::string topic_;
+        std::string topic_, frame_;
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_;
         std::vector<tf::Transform> transf_;
+        std::vector<std::string> names_;
+        //params
+        double clus_tol_;
+        int min_size_, max_size_;
     };
 }
 #endif //_INCL_FRUIT_SAMURAI_H_

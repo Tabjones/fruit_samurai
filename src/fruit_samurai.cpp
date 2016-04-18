@@ -34,55 +34,87 @@
 
 namespace fruit_samurai
 {
-    FruitSamurai::FruitSamurai(const std::string name_space):
-        disabled_(false), topic_("/pacman_vision/processed_scene")
+    FruitSamurai::FruitSamurai(const std::string name_space)
     {
         nh_ = boost::make_shared<ros::NodeHandle>(name_space);
-        //TODO rosparams
+        nh_->param<double>("cluster_tolerance", clus_tol_, 0.005);
+        nh_->param<int>("cluster_min_size", min_size_, 1000);
+        nh_->param<int>("cluster_max_size", max_size_, 10000);
+        nh_->param<std::string>("input_topic", topic_, "/pacman_vision/processed_scene");
+        nh_->param<std::string>("reference_frame", frame_, "/camera_rgb_optical_frame");
         sub_ = nh_->subscribe(nh_->resolveName(topic_), 1, &FruitSamurai::cbCloud, this);
         srv_slice_ = nh_->advertiseService("slice", &FruitSamurai::cbSlice, this);
     }
 
-    void FruitSamurai::spinOnce() const
+    void FruitSamurai::spinOnce()
     {
         ros::spinOnce();
-        if (disabled_)
-            return;
-        //TODO add tf broadcaster
+        if (!transf_.empty()){
+            std::size_t n(0);
+            for (const auto &t: transf_)
+            {
+                fruit_brcaster_.sendTransform(tf::StampedTransform(
+                            t, ros::Time::now(),
+                            frame_,
+                            names_[n]));
+                ++n;
+            }
+        }
     }
 
     void FruitSamurai::cbCloud(const sensor_msgs::PointCloud2::ConstPtr &msg)
     {
-        //TODO this does not use the disabled features
         cloud_ = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
-        pcl::fromROSMsg (*msg, *cloud_);
+        sensor_msgs::PointCloud msg_conv, msg1;
+        sensor_msgs::PointCloud2 msg2;
+        sensor_msgs::convertPointCloud2ToPointCloud(*msg, msg1);
+        listener_.transformPointCloud(frame_, msg1, msg_conv);
+        sensor_msgs::convertPointCloudToPointCloud2(msg_conv, msg2);
+        pcl::fromROSMsg (msg2, *cloud_);
     }
 
     bool FruitSamurai::cbSlice(fruit_samurai::Slice::Request &req, fruit_samurai::Slice::Response &res)
     {
-        if (disabled_){
-            ROS_ERROR("[FruitSamurai::%s]\tNode is disabled, this service is suspended!", __func__);
+        if (!cloud_){
+            ROS_ERROR("[FruitSamurai::%s]\tNo cloud available, check subscriber!", __func__);
             return false;
         }
-        if (!cloud_)
-            return false;
-        //TODO
         pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ece;
         pcl::IndicesClustersPtr clusters = boost::make_shared<pcl::IndicesClusters>();
         ece.setInputCloud(cloud_);
-        ece.setClusterTolerance(0.005);
-        ece.setMinClusterSize(50);
-        ece.setMaxClusterSize(300);
-        ece.segment(*clusters);
+        ece.setClusterTolerance(clus_tol_);
+        ece.setMinClusterSize(min_size_);
+        ece.setMaxClusterSize(max_size_);
+        ece.extract(*clusters);
+        ROS_INFO("[FruitSamurai::%s]\tFound %d fruits!",__func__, clusters->size());
         transf_.clear();
+        names_.clear();
         for (const auto &cl: *clusters)
         {
-            pc::PointCloud<pcl::PointXYZRGB>::Ptr cluster = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
+            pcl::PointCloud<pcl::PointXYZRGB>::Ptr cluster = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
             pcl::copyPointCloud(*cloud_, cl, *cluster);
+            names_.push_back(std::string("Fruit_"+std::to_string(cluster->size())));
             //fill in transforms
             Eigen::Vector4f cent, min, max;
             pcl::compute3DCentroid(*cluster, cent);
-            pcl::getMinMax3d(*cluster, min, max);
+            pcl::getMinMax3D(*cluster, min, max);
+            while (cent[2] <= max[2])
+                cent[2] += 0.002;
+            Eigen::Vector3f nX,nY,nZ;
+            nZ = - Eigen::Vector3f::UnitZ();
+            nX = Eigen::Vector3f::UnitX() - (nZ*(nZ.dot(Eigen::Vector3f::UnitX())));
+            nX.normalize();
+            nY = nZ.cross(nX);
+            nY.normalize();
+            Eigen::Matrix3f rot;
+            rot<< nX(0), nY(0), nZ(0),
+                  nX(1), nY(1), nZ(1),
+                  nX(2), nY(2), nZ(2);
+            Eigen::Quaternionf q(rot);
+            tf::Transform t(tf::Quaternion(q.x(), q.y(), q.z(), q.w()), tf::Vector3(cent[0], cent[1], cent[2]));
+            transf_.push_back(t);
+            //TODO fill in the response
         }
+        return true;
     }
-}
+} //End namespace
