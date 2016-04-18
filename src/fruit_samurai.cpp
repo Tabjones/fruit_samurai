@@ -38,10 +38,9 @@ namespace fruit_samurai
         disabled_(false), topic_("/pacman_vision/processed_scene")
     {
         nh_ = boost::make_shared<ros::NodeHandle>(name_space);
-        //TODO services, subscribers
         //TODO rosparams
-        nh_->subscribe(nh_->resolveName(topic_), 1, &FruitSamurai::cbCloud, this);
-        nh_->advertiseService("slice", &FruitSamurai::cbSlice, this);
+        sub_ = nh_->subscribe(nh_->resolveName(topic_), 1, &FruitSamurai::cbCloud, this);
+        srv_slice_ = nh_->advertiseService("slice", &FruitSamurai::cbSlice, this);
     }
 
     void FruitSamurai::spinOnce() const
@@ -65,6 +64,25 @@ namespace fruit_samurai
             ROS_ERROR("[FruitSamurai::%s]\tNode is disabled, this service is suspended!", __func__);
             return false;
         }
+        if (!cloud_)
+            return false;
         //TODO
+        pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ece;
+        pcl::IndicesClustersPtr clusters = boost::make_shared<pcl::IndicesClusters>();
+        ece.setInputCloud(cloud_);
+        ece.setClusterTolerance(0.005);
+        ece.setMinClusterSize(50);
+        ece.setMaxClusterSize(300);
+        ece.segment(*clusters);
+        transf_.clear();
+        for (const auto &cl: *clusters)
+        {
+            pc::PointCloud<pcl::PointXYZRGB>::Ptr cluster = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
+            pcl::copyPointCloud(*cloud_, cl, *cluster);
+            //fill in transforms
+            Eigen::Vector4f cent, min, max;
+            pcl::compute3DCentroid(*cluster, cent);
+            pcl::getMinMax3d(*cluster, min, max);
+        }
     }
 }

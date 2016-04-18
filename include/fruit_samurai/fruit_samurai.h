@@ -37,6 +37,8 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/common/common.h>
+#include <pcl/common/impl/common.hpp>
+#include <pcl/common/centroid.h>
 #include <pcl_ros/point_cloud.h>
 #include <sensor_msgs/point_cloud_conversion.h>
 #include <ros/console.h>
@@ -86,6 +88,7 @@ namespace fruit_samurai
         bool disabled_;
         std::string topic_;
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_;
+        std::vector<tf::Transform> transf_;
     };
 }
 #endif //_INCL_FRUIT_SAMURAI_H_
