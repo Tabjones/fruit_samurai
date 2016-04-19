@@ -85,6 +85,7 @@ namespace fruit_samurai
         //params
         double clus_tol_;
         int min_size_, max_size_;
+        bool invert_;
     };
 }
 #endif //_INCL_FRUIT_SAMURAI_H_

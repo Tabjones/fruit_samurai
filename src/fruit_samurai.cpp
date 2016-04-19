@@ -38,6 +38,7 @@ namespace fruit_samurai
     {
         nh_ = boost::make_shared<ros::NodeHandle>(name_space);
         nh_->param<double>("cluster_tolerance", clus_tol_, 0.005);
+        nh_->param<bool>("invert_z_projection", invert_, false);
         nh_->param<int>("cluster_min_size", min_size_, 1000);
         nh_->param<int>("cluster_max_size", max_size_, 10000);
         nh_->param<std::string>("input_topic", topic_, "/pacman_vision/processed_scene");
@@ -98,8 +99,16 @@ namespace fruit_samurai
             Eigen::Vector4f cent, min, max;
             pcl::compute3DCentroid(*cluster, cent);
             pcl::getMinMax3D(*cluster, min, max);
-            while (cent[2] <= max[2])
-                cent[2] += 0.002;
+            if (invert_){
+                //move towards negative min z
+                while (cent[2] >= min[2])
+                    cent[2] -= 0.002;
+            }
+            else{
+                //move towards positve max z
+                while (cent[2] <= max[2])
+                    cent[2] += 0.002;
+            }
             Eigen::Vector3f nX,nY,nZ;
             nZ = - Eigen::Vector3f::UnitZ();
             nX = Eigen::Vector3f::UnitX() - (nZ*(nZ.dot(Eigen::Vector3f::UnitX())));
