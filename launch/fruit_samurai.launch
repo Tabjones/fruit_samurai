@@ -6,11 +6,13 @@
     <node pkg="fruit_samurai" type="fruit_samurai_node" name="fruit_samurai" output="screen">
         <param name="cluster_tolerance" value="0.005"/>
         <param name="cluster_min_size" value="1000"/>
-        <param name="cluster_max_size" value="10000"/>
+        <param name="cluster_max_size" value="2500"/>
         <param name="input_topic" value="/pacman_vision/processed_scene"/>
-        <param name="reference_frame" value="/camera_rgb_optical_frame"/>
-        <param name="invert_z_projection" value="false"/>
+        <param name="reference_frame" value="/qb_delta_base"/>
+        <param name="invert_z_projection" value="true"/>
     </node>
+    <node pkg="tf" type="static_transform_publisher"
+        name="delta_transform" args="-0.07 -0.35 0.23 -0.1386 0 0 0.9903 /camera_rgb_optical_frame /qb_delta_base 200" output="screen"/>
     <!-- <node pkg="tf" type="static_transform_publisher" name="calibration_transform" args="0.1 &#45;0.03 1.1 1 0 0 0 /camera_rgb_optical_frame /base_frame 200" output="screen"/> -->
 
 </launch>
