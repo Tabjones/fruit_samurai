@@ -42,9 +42,12 @@ namespace fruit_samurai
         nh_->param<int>("cluster_min_size", min_size_, 1000);
         nh_->param<int>("cluster_max_size", max_size_, 10000);
         nh_->param<std::string>("input_topic", topic_, "/pacman_vision/processed_scene");
-        nh_->param<std::string>("reference_frame", frame_, "/camera_rgb_optical_frame");
+        nh_->param<std::string>("reference_frame", frame_, "/qb_delta_base");
         sub_ = nh_->subscribe(nh_->resolveName(topic_), 1, &FruitSamurai::cbCloud, this);
         srv_slice_ = nh_->advertiseService("slice", &FruitSamurai::cbSlice, this);
+        srv_calib_ = nh_->advertiseService("calibrate", &FruitSamurai::cbCalib, this);
+	delta_trans_.setOrigin(tf::Vector3(-0.023609, -0.37902, 0.19324));
+	delta_trans_.setRotation(tf::Quaternion(-0.15613, 0, 0, 0.98774));
     }
 
     void FruitSamurai::spinOnce()
@@ -54,13 +57,17 @@ namespace fruit_samurai
             std::size_t n(0);
             for (const auto &t: transf_)
             {
-                fruit_brcaster_.sendTransform(tf::StampedTransform(
+                brcaster_.sendTransform(tf::StampedTransform(
                             t, ros::Time::now(),
                             frame_,
                             names_[n]));
                 ++n;
             }
         }
+	brcaster_.sendTransform(tf::StampedTransform(
+                            delta_trans_, ros::Time::now(),
+			    "/camera_rgb_optical_frame",
+			    "/qb_delta_base"));
     }
 
     void FruitSamurai::cbCloud(const sensor_msgs::PointCloud2::ConstPtr &msg)
@@ -126,4 +133,22 @@ namespace fruit_samurai
         }
         return true;
     }
+bool FruitSamurai::cbCalib(fruit_samurai::calibrate::Request &req, fruit_samurai::calibrate::Response &res)
+{
+	tf::StampedTransform mark_cam, mark_delta;
+	mark_delta.setOrigin(tf::Vector3(0,0,0.5075));
+	mark_delta.setRotation(tf::Quaternion(1,0,0,0));
+	try
+	{
+		listener_.waitForTransform("/camera_rgb_optical_frame", "/ar_marker_50", ros::Time(0), ros::Duration(5));
+		listener_.lookupTransform("/camera_rgb_optical_frame", "/ar_marker_50", ros::Time(0), mark_cam);
+	}
+	catch ( tf::TransformException ex)
+	{
+		return false;
+	}
+	delta_trans_ = mark_cam*mark_delta.inverse();	
+return true;
+}
+
 } //End namespace

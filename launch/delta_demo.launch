@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<launch>
+
+    <arg name="asus" default="asus2"/>
+
+    <!-- ASUS TOPICS -->
+    <!-- launch the ar tracker, units in cm, adjust at will -->
+    <arg name="marker_size" default="7.3" />
+    <arg name="max_new_marker_error" default="0.08" />
+    <arg name="max_track_error" default="0.2" />
+
+    <arg name="cam_image_topic" default="/camera/depth_registered/points" />
+    <arg name="cam_info_topic" default="/camera/depth_registered/camera_info" />
+    <arg name="output_frame" default="/camera_rgb_optical_frame" />
+
+    <node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkers" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame)" />
+
+    <!-- launch the rgbd sensor, in this case using openni2 for the asus -->
+    <include file="$(find openni2_launch)/launch/openni2.launch">
+        <arg name="depth_registration" value="true" />
+        <arg name="color_depth_synchronization" value="true" />
+        <arg name="rgb_camera_info_url" value="file://$(find calibration)/config/intrinsics/rgb_$(arg asus).yaml"/>
+        <arg name="depth_camera_info_url" value="file://$(find calibration)/config/intrinsics/depth_$(arg asus).yaml"/>
+    </include>
+	
+<include file="$(find fruit_samurai)/launch/fruit_samurai.launch">
+        <param name="cluster_tolerance" value="0.005"/>
+        <param name="cluster_min_size" value="1000"/>
+        <param name="cluster_max_size" value="2500"/>
+        <param name="input_topic" value="/pacman_vision/processed_scene"/>
+        <param name="reference_frame" value="/qb_delta_base"/>
+        <param name="invert_z_projection" value="true"/>
+</include>
+
+<include file="$(find pacman_vision)/launch/pacman_vision.launch">
+	<arg name="run_rviz" value="true"/>
+	<arg name="load" value="delta"/>
+</include>
+
+</launch>

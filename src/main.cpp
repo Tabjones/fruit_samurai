@@ -38,8 +38,8 @@ int main(int argc, char *argv[])
 {
     ros::init(argc, argv, "fruit_samurai");
     fs::FruitSamurai node("fruit_samurai");
-    //Try to go at 20hz
-    ros::Rate rate(20);
+    //Try to go at 50hz
+    ros::Rate rate(50);
     while (ros::ok())
     {
         node.spinOnce();

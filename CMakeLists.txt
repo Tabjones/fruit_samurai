@@ -66,6 +66,7 @@ link_directories(${PCL_LIBRARY_DIRS})
 add_service_files(
   FILES
   Slice.srv
+  calibrate.srv
 )
 
 ## Generate added messages and services with any dependencies listed here

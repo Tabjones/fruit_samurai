@@ -50,6 +50,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <ros/rate.h>
 #include <fruit_samurai/Slice.h>
+#include <fruit_samurai/calibrate.h>
 
 namespace fruit_samurai
 {
@@ -72,15 +73,18 @@ namespace fruit_samurai
         void cbCloud(const sensor_msgs::PointCloud2::ConstPtr &msg);
         ///Slice service callback perform fruit slicing, aka segmentation in the box
         bool cbSlice(fruit_samurai::Slice::Request &req, fruit_samurai::Slice::Response &res);
+        bool cbCalib(fruit_samurai::calibrate::Request &req, fruit_samurai::calibrate::Response &res);
         boost::shared_ptr<ros::NodeHandle> nh_;
         ros::Subscriber sub_;
         ros::ServiceServer srv_slice_;
-        tf::TransformBroadcaster fruit_brcaster_;
+        ros::ServiceServer srv_calib_;
+        tf::TransformBroadcaster brcaster_;
         tf::TransformListener listener_;
 
         std::string topic_, frame_;
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_;
         std::vector<tf::Transform> transf_;
+	tf::Transform delta_trans_;
         std::vector<std::string> names_;
         //params
         double clus_tol_;
