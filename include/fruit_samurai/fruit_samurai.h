@@ -51,6 +51,7 @@
 #include <ros/rate.h>
 #include <fruit_samurai/Slice.h>
 #include <fruit_samurai/calibrate.h>
+#include <std_msgs/Float64MultiArray.h>
 
 namespace fruit_samurai
 {
@@ -71,12 +72,16 @@ namespace fruit_samurai
         private:
         ///Callback to get input point cloud
         void cbCloud(const sensor_msgs::PointCloud2::ConstPtr &msg);
+        void subCallback(const std_msgs::Float64::ConstPtr &msg);
         ///Slice service callback perform fruit slicing, aka segmentation in the box
         bool cbSlice(fruit_samurai::Slice::Request &req, fruit_samurai::Slice::Response &res);
+
         bool cbCalib(fruit_samurai::calibrate::Request &req, fruit_samurai::calibrate::Response &res);
         boost::shared_ptr<ros::NodeHandle> nh_;
         ros::Subscriber sub_;
         ros::ServiceServer srv_slice_;
+        ros::Publisher pub_res;
+        ros::Subscriber sub_req;
         ros::ServiceServer srv_calib_;
         tf::TransformBroadcaster brcaster_;
         tf::TransformListener listener_;
