@@ -48,8 +48,14 @@ namespace fruit_samurai
         srv_slice_ = nh_->advertiseService("Slicer", &FruitSamurai::cbSlice, this);
         srv_calib_ = nh_->advertiseService("calibrate", &FruitSamurai::cbCalib, this);
         pub_res = nh_->advertise<std_msgs::Float64MultiArray>("sliced_fruit", 1);
-      	delta_trans_.setOrigin(tf::Vector3(-0.017, -0.385, 0.216));
-      	delta_trans_.setRotation(tf::Quaternion(-0.188, -0.010, -0.008, 0.982));
+      	delta_trans_.setOrigin(tf::Vector3(-0.046, -0.324, 0.298));
+      	delta_trans_.setRotation(tf::Quaternion(-0.289, 0.024, 0.022, 0.957));
+
+       // - Translation: [-0.046, -0.324, 0.298]
+//- Rotation: in Quaternion [-0.289, 0.024, 0.022, 0.957]
+ //           in RPY (radian) [-0.586, 0.059, 0.027]
+  //          in RPY (degree) [-33.603, 3.402, 1.560]
+
     }
 
     void FruitSamurai::subCallback(const std_msgs::Float64::ConstPtr &msg)
