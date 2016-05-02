@@ -22,19 +22,20 @@
         <arg name="rgb_camera_info_url" value="file://$(find calibration)/config/intrinsics/rgb_$(arg asus).yaml"/>
         <arg name="depth_camera_info_url" value="file://$(find calibration)/config/intrinsics/depth_$(arg asus).yaml"/>
     </include>
-	
-<include file="$(find fruit_samurai)/launch/fruit_samurai.launch">
+
+    <rosparam command="load" file="$(find fruit_samurai)/config/calibration.yaml" ns="/fruit_samurai"/>
+    <include file="$(find fruit_samurai)/launch/fruit_samurai.launch">
         <param name="cluster_tolerance" value="0.005"/>
         <param name="cluster_min_size" value="1000"/>
         <param name="cluster_max_size" value="2500"/>
         <param name="input_topic" value="/pacman_vision/processed_scene"/>
         <param name="reference_frame" value="/qb_delta_base"/>
         <param name="invert_z_projection" value="true"/>
-</include>
+    </include>
 
-<include file="$(find pacman_vision)/launch/pacman_vision.launch">
-	<arg name="run_rviz" value="true"/>
-	<arg name="load" value="delta"/>
-</include>
+    <include file="$(find pacman_vision)/launch/pacman_vision.launch">
+        <arg name="run_rviz" value="true"/>
+        <arg name="load" value="delta"/>
+    </include>
 
 </launch>

@@ -48,8 +48,11 @@ namespace fruit_samurai
         srv_slice_ = nh_->advertiseService("Slicer", &FruitSamurai::cbSlice, this);
         srv_calib_ = nh_->advertiseService("calibrate", &FruitSamurai::cbCalib, this);
         pub_res = nh_->advertise<std_msgs::Float64MultiArray>("sliced_fruit", 1);
-      	delta_trans_.setOrigin(tf::Vector3(-0.046, -0.324, 0.298));
-      	delta_trans_.setRotation(tf::Quaternion(-0.289, 0.024, 0.022, 0.957));
+        std::vector<double> trasl, rot;
+        nh_->param<std::vector<double> >("translation", trasl, {0, 0, 0});
+        nh_->param<std::vector<double> >("rotation", rot, {0, 0, 0, 1});
+        delta_trans_.setOrigin(tf::Vector3(trasl[0], trasl[1], trasl[2]));
+        delta_trans_.setRotation(tf::Quaternion(rot[0], rot[1], rot[2], rot[3]));
 
        // - Translation: [-0.046, -0.324, 0.298]
 //- Rotation: in Quaternion [-0.289, 0.024, 0.022, 0.957]
@@ -215,19 +218,39 @@ namespace fruit_samurai
     }
 bool FruitSamurai::cbCalib(fruit_samurai::calibrate::Request &req, fruit_samurai::calibrate::Response &res)
 {
-	tf::StampedTransform mark_cam, mark_delta;
-	mark_delta.setOrigin(tf::Vector3(0,0,0.5075));
-	mark_delta.setRotation(tf::Quaternion(1,0,0,0));
-	try
-	{
-		listener_.waitForTransform("/camera_rgb_optical_frame", "/ar_marker_50", ros::Time(0), ros::Duration(5));
-		listener_.lookupTransform("/camera_rgb_optical_frame", "/ar_marker_50", ros::Time(0), mark_cam);
-	}
-	catch ( tf::TransformException ex)
-	{
-		return false;
-	}
-	delta_trans_ = mark_cam*mark_delta.inverse();
+    tf::StampedTransform mark_cam, mark_delta;
+    mark_delta.setOrigin(tf::Vector3(0,0,0.5075));
+    mark_delta.setRotation(tf::Quaternion(1,0,0,0));
+    try
+    {
+        listener_.waitForTransform("/camera_rgb_optical_frame", "/ar_marker_50", ros::Time(0), ros::Duration(5));
+        listener_.lookupTransform("/camera_rgb_optical_frame", "/ar_marker_50", ros::Time(0), mark_cam);
+    }
+    catch ( tf::TransformException ex)
+    {
+        return false;
+    }
+    delta_trans_ = mark_cam*mark_delta.inverse();
+    //Save to yaml
+    std::string path = ros::package::getPath("fruit_samurai");
+    std::string file = path + "/config/calibration.yaml";
+    std::ofstream f;
+    f.open(file.c_str());
+    if (f.is_open())
+    {
+      f << "# Results are written in the form that they can be directly sent to a static_transform_publisher node" << std::endl;
+      f << "# Recall its usage use static_transform_publisher x y z qx qy qz qw frame_id child_frame_id  period(milliseconds)" << std::endl;
+      f << "translation: [" << delta_trans_.getOrigin()[0] << ", " <<
+                          delta_trans_.getOrigin()[1] << ", " <<
+                          delta_trans_.getOrigin()[2]<<"]" << std::endl;
+      f << "rotation: [" << delta_trans_.getRotation().getX() << ", " <<
+                            delta_trans_.getRotation().getY() << ", " <<
+                            delta_trans_.getRotation().getZ() << ", " <<
+                            delta_trans_.getRotation().getW() << "]" << std::endl;
+      f << "frame_id: " << "camera_rgb_optical_frame" << std::endl;
+      f << "child_frame_id: " << "qb_delta_base" << std::endl;
+      f.close();
+    }
 return true;
 }
 
