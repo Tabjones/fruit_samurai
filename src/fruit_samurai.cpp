@@ -64,6 +64,9 @@ namespace fruit_samurai
     void FruitSamurai::subCallback(const std_msgs::Float64::ConstPtr &msg)
     {
 
+      nh_->param<int>("cluster_min_size", min_size_, 1000);
+      nh_->param<int>("cluster_max_size", max_size_, 10000);
+      //ROS_INFO_STREAM("cluster_max_size: " << max_size_);
       if (msg->data == 0.0)
       {
         return;
