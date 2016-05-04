@@ -102,13 +102,20 @@ namespace fruit_samurai
 
     void FruitSamurai::cbCloud(const sensor_msgs::PointCloud2::ConstPtr &msg)
     {
-        cloud_ = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
-        sensor_msgs::PointCloud msg_conv, msg1;
-        sensor_msgs::PointCloud2 msg2;
-        sensor_msgs::convertPointCloud2ToPointCloud(*msg, msg1);
-        listener_.transformPointCloud(frame_, msg1, msg_conv);
-        sensor_msgs::convertPointCloudToPointCloud2(msg_conv, msg2);
-        pcl::fromROSMsg (msg2, *cloud_);
+        try
+        {
+            cloud_ = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
+            sensor_msgs::PointCloud msg_conv, msg1;
+            sensor_msgs::PointCloud2 msg2;
+            sensor_msgs::convertPointCloud2ToPointCloud(*msg, msg1);
+            listener_.transformPointCloud(frame_, msg1, msg_conv);
+            sensor_msgs::convertPointCloudToPointCloud2(msg_conv, msg2);
+            pcl::fromROSMsg (msg2, *cloud_);
+        }
+        catch (...)
+        {
+            return;
+        }
         //ROS_INFO("Getting cloud");
     }
 
