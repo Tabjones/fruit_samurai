@@ -71,67 +71,17 @@ namespace fruit_samurai
       {
         return;
       }
-
-      if (!cloud_){
-          ROS_ERROR("[FruitSamurai::%s]\tNo cloud available, check subscriber!", __func__);
-          return;
-      }
-      pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ece;
-      pcl::IndicesClustersPtr clusters = boost::make_shared<pcl::IndicesClusters>();
-      ece.setInputCloud(cloud_);
-      ece.setClusterTolerance(clus_tol_);
-      ece.setMinClusterSize(min_size_);
-      ece.setMaxClusterSize(max_size_);
-      ece.extract(*clusters);
-      ROS_INFO("[FruitSamurai::%s]\tFound %ld fruits!",__func__, clusters->size());
-      transf_.clear();
-      names_.clear();
-      std_msgs::Float64MultiArray fruit_positions;
-      for (const auto &cl: *clusters)
-      {
-          pcl::PointCloud<pcl::PointXYZRGB>::Ptr cluster = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
-          pcl::copyPointCloud(*cloud_, cl, *cluster);
-          names_.push_back(std::string("Fruit_"+std::to_string(cluster->size())));
-          //fill in transforms
-          Eigen::Vector4f cent, min, max;
-          pcl::compute3DCentroid(*cluster, cent);
-          pcl::getMinMax3D(*cluster, min, max);
-          if (invert_){
-              //move towards negative min z
-              while (cent[2] >= min[2])
-                  cent[2] -= 0.002;
-          }
-          else{
-              //move towards positve max z
-              while (cent[2] <= max[2])
-                  cent[2] += 0.002;
-          }
-          Eigen::Vector3f nX,nY,nZ;
-          nZ = - Eigen::Vector3f::UnitZ();
-          nX = Eigen::Vector3f::UnitX() - (nZ*(nZ.dot(Eigen::Vector3f::UnitX())));
-          nX.normalize();
-          nY = nZ.cross(nX);
-          nY.normalize();
-          Eigen::Matrix3f rot;
-          rot<< nX(0), nY(0), nZ(0),
-                nX(1), nY(1), nZ(1),
-                nX(2), nY(2), nZ(2);
-          Eigen::Quaternionf q(rot);
-          tf::Transform t(tf::Quaternion(q.x(), q.y(), q.z(), q.w()), tf::Vector3(cent[0], cent[1], cent[2]));
-          transf_.push_back(t);
-          fruit_positions.data.push_back(cent[0]);
-          fruit_positions.data.push_back(cent[1]);
-          fruit_positions.data.push_back(cent[2]);
-          fruit_positions.data.push_back((double)cluster->size());
-
-          //TODO fill in the response
-        }
-      pub_res.publish(fruit_positions);
+      pub_res.publish(fruits);
+      ROS_WARN("[FruitSamurai::%s]\tAsked for fruits!",__func__);
+      ros::spinOnce();
     }
 
     void FruitSamurai::spinOnce()
     {
         ros::spinOnce();
+        fruit_samurai::Slice::Request req;
+        fruit_samurai::Slice::Response res;
+        cbSlice(req,res);
         if (!transf_.empty()){
             std::size_t n(0);
             for (const auto &t: transf_)
@@ -141,12 +91,13 @@ namespace fruit_samurai
                             frame_,
                             names_[n]));
                 ++n;
+                ros::spinOnce();
             }
         }
-	brcaster_.sendTransform(tf::StampedTransform(
-                            delta_trans_, ros::Time::now(),
-			    "/camera_rgb_optical_frame",
-			    "/qb_delta_base"));
+        brcaster_.sendTransform(tf::StampedTransform(
+                    delta_trans_, ros::Time::now(),
+                    "/camera_rgb_optical_frame",
+                    "/qb_delta_base"));
     }
 
     void FruitSamurai::cbCloud(const sensor_msgs::PointCloud2::ConstPtr &msg)
@@ -167,6 +118,8 @@ namespace fruit_samurai
             ROS_ERROR("[FruitSamurai::%s]\tNo cloud available, check subscriber!", __func__);
             return false;
         }
+        nh_->param<int>("cluster_min_size", min_size_, 1000);
+        nh_->param<int>("cluster_max_size", max_size_, 10000);
         pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ece;
         pcl::IndicesClustersPtr clusters = boost::make_shared<pcl::IndicesClusters>();
         ece.setInputCloud(cloud_);
@@ -177,11 +130,14 @@ namespace fruit_samurai
         ROS_INFO("[FruitSamurai::%s]\tFound %ld fruits!",__func__, clusters->size());
         transf_.clear();
         names_.clear();
+        fruits.data.clear();
+        int i(0);
         for (const auto &cl: *clusters)
         {
             pcl::PointCloud<pcl::PointXYZRGB>::Ptr cluster = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
             pcl::copyPointCloud(*cloud_, cl, *cluster);
-            names_.push_back(std::string("Fruit_"+std::to_string(cluster->size())));
+            /* names_.push_back(std::string("Fruit_"+std::to_string(cluster->size()))); */
+            names_.push_back(std::string("Fruit_"+std::to_string(i)));
             //fill in transforms
             Eigen::Vector4f cent, min, max;
             pcl::compute3DCentroid(*cluster, cent);
@@ -216,6 +172,11 @@ namespace fruit_samurai
             res.x.push_back(x_f);
             res.y.push_back(y_f);
             res.z.push_back(z_f);
+            fruits.data.push_back(cent[0]);
+            fruits.data.push_back(cent[1]);
+            fruits.data.push_back(cent[2]);
+            fruits.data.push_back((double)cluster->size());
+            ++i;
         }
         return true;
     }
