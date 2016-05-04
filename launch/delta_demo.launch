@@ -14,7 +14,7 @@
     <rosparam command="load" file="$(find fruit_samurai)/config/calibration.yaml" ns="/fruit_samurai"/>
     <node pkg="fruit_samurai" type="fruit_samurai_node" name="fruit_samurai" output="screen">
         <param name="cluster_tolerance" value="0.005"/>
-        <param name="cluster_min_size" value="250"/>
+        <param name="cluster_min_size" value="100"/>
         <param name="cluster_max_size" value="70000"/>
         <param name="input_topic" value="/pacman_vision/processed_scene"/>
         <param name="reference_frame" value="/qb_delta_base"/>
